@@ -1,0 +1,147 @@
+output of: `man avast-protocol`
+-----------------------------
+
+AVAST-PROTOCOL(5)															 File Formats Manual															    AVAST-PROTOCOL(5)
+
+NAME
+       avast-protocol - Avast UNIX socket communication protocol
+
+SYNOPSIS
+       nc -U /var/run/avast/scan.sock
+       socat /var/run/avast/scan.sock -
+
+DESCRIPTION
+       avast(1) uses a text based protocol for communication with the scan service daemon over the UNIX socket. This manual page briefly describes the protocol.
+
+GENERAL PROTOCOL RULES
+       The communication consists of command-response pairs and is line-based. The new line terminator is CRLF. The general command syntax is:
+       <command>[<space><parameter>]...
+
+       Responses may be numerical only, or may contain additional output data.	Numerical responses have the format:
+       <code><space><command><space><msg>
+
+       The output data format is:
+       <command><space><data>
+
+       Output data, are always encapsulated between numerical responses 210 (DATA) and the final numerical response for the command. Delimiters such as <space>, <tab> or CR/LF are backslash escaped, when present in the data or command argument.
+
+       The communication from the service starts with a numeric welcome message, 220.  The protocol commands are case-insensitive.
+
+RESPONSE CODES
+       200 OK
+       210 DATA
+       220 Welcome message
+       451 Engine error
+       466 License error
+       501 Syntax error
+       520 URL blocked
+
+COMMANDS
+       SCAN   Scan a file/directory.
+
+	      Synopsis:
+	      SCAN <path>
+
+	      The format of the data message lines is:
+	      <path><tab><status>[<tab><info>]
+
+	      The <status> has a format of "'['<X>']'<depth>.0",  where <X> can be one of: "+" - file is OK, "E" - error during scan and "L" - infection found. <depth> is the depth when scanning inside archives (0 for common non-archive files).
+
+	      The <info> follows the "E" and "L" cases. The "L" case info has the format "0<space><infection>". The "E" case info has the format "Error<space><errno><space><errstr>".
+
+	      Example:
+	      > scan /etc
+
+	      210 SCAN DATA
+	      SCAN /etc/fstab	  [+]0.0
+	      SCAN /etc/shadow	  [E]0.0    Error 13 Permission\ denied
+	      SCAN /etc/eicar.com [L]0.0    0 EICAR\ Test-NOT\ virus!!!
+	      ...
+	      200 SCAN OK
+
+       VPS    Get the virus definitions (VPS) version.
+
+	      Synopsis:
+	      VPS
+
+	      Example:
+	      > VPS
+
+	      210 VPS DATA
+	      VPS 15051301
+	      200 VPS OK
+
+       PACK   Get/set packer options.
+
+	      Synopsis:
+	      PACK [+|-<packer>...]
+
+	      Use +<packer> to enable a specific packer and -<packer> to disable it. When invoked without an argument, the packer set is displayed, but not changed. The same mechanism applies to the FLAGS and SENSITIVITY commands.
+
+	      Example:
+	      > PACK -zip -iso
+
+	      210 PACK DATA
+	      PACK +mime -zip +arj +rar ... +7zip -iso +dmg
+	      200 PACK OK
+
+       FLAGS  Get/set scan flags.
+
+	      Synopsis:
+	      FLAGS [+|-<flag>...]
+
+	      Example:
+	      > FLAGS +fullfiles
+
+	      210 FLAGS DATA
+	      FLAGS +fullfiles +allfiles -scandevices
+	      200 FLAGS OK
+
+       SENSITIVITY
+	      Get/set scan sensitivity.
+
+	      Synopsis:
+	      SENSITIVITY [+|-<sensitivity>...]
+
+	      Example:
+	      > SENSITIVITY +pup
+
+	      210 SENSITIVITY DATA
+	      SENSITIVITY +worm +trojan +adware +spyware ... +pup
+	      200 SENSITIVITY OK
+
+       EXCLUDE
+	      Exclude path from scans.
+
+	      Synopsis:
+	      EXCLUDE <path>
+
+	      Paths  omitted  by  exclusion  are  reported with error 42019 - Skipped due to exclusion settings. <path> is matched as a string prefix thus e.g. "/usr/lib/" excludes nothing because the "/usr/lib" scan path does not match and any "/usr/lib/anything" subpath also does not match.
+	      <path> may contain wild cards ("*").
+
+	      Example:
+	      > EXCLUDE /tmp
+
+	      210 EXCLUDE DATA
+	      EXCLUDE /tmp
+	      200 EXCLUDE OK
+
+       CHECKURL
+	      Check whether a given URL is malicious.
+
+	      Synopsis: CHECKURL <url>
+
+	      Example:
+	      > CHECKURL http://www.google.com
+	      200 CHECKURL OK
+
+	      > CHECKURL http://www.avast.com/eng/test-url-blocker.html
+	      520 CHECKURL URL blocked
+
+SEE ALSO
+       avast(1), nc(1), socat(1)
+
+AUTHOR
+       Martin Tuma (tuma@avast.com)
+
+2.2.0																	      2017-03-24															    AVAST-PROTOCOL(5)

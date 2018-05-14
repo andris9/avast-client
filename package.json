@@ -1,0 +1,21 @@
+{
+    "name": "avast-client",
+    "version": "1.0.0",
+    "description": "Client for Avast scanner",
+    "main": "lib/avast-client.js",
+    "scripts": {
+        "test": "grunt"
+    },
+    "keywords": ["avast", "virus scan"],
+    "author": "Andris Reinman",
+    "license": "MIT",
+    "devDependencies": {
+        "eslint-config-nodemailer": "^1.2.0",
+        "grunt": "^1.0.2",
+        "grunt-cli": "^1.2.0",
+        "grunt-eslint": "^20.1.0"
+    },
+    "dependencies": {
+        "npmlog": "^4.1.2"
+    }
+}
